@@ -37,7 +37,7 @@ startGame();
 function turnClick(square) {
   if (typeof origBoard[square.target.id] === 'number') {
     turn(square.target.id, huPlayer);
-    trainNeuralNetwork();
+    //trainNeuralNetwork();
     if (!checkTie()) turn(bestSpot(), aiPlayer);
   }
 }
@@ -130,62 +130,19 @@ function checkTie() {
 }
 
 /**
- * Implementation of the minimax algorithm for AI move prediction.
- * @param {Array} newBoard - The current game board.
- * @param {string} player - The symbol of the current player.
- * @returns {Object} - Object containing the score and index of the best move.
+ * @fileoverview
+ * Tic-Tac-Toe Neural Network Model and Prediction Functions
+ *
+ * @description
+ * This script defines a simple neural network model using TensorFlow.js for making predictions
+ * in a Tic-Tac-Toe game. It includes functions for training the neural network and making predictions
+ * based on the current game state.
+ *
+ * @author Your Name
+ * @version 1.0
  */
-function minimax(newBoard, player) {
-  var availSpots = emptySquares();
 
-  if (checkWin(newBoard, huPlayer)) {
-    return { score: -10 };
-  } else if (checkWin(newBoard, aiPlayer)) {
-    return { score: 10 };
-  } else if (availSpots.length === 0) {
-    return { score: 0 };
-  }
-  var moves = [];
-  for (var i = 0; i < availSpots.length; i++) {
-    var move = {};
-    move.index = newBoard[availSpots[i]];
-    newBoard[availSpots[i]] = player;
-
-    if (player == aiPlayer) {
-      var result = minimax(newBoard, huPlayer);
-      move.score = result.score;
-    } else {
-      var result = minimax(newBoard, aiPlayer);
-      move.score = result.score;
-    }
-
-    newBoard[availSpots[i]] = move.index;
-
-    moves.push(move);
-  }
-
-  var bestMove;
-  if (player === aiPlayer) {
-    var bestScore = -10000;
-    for (var i = 0; i < moves.length; i++) {
-      if (moves[i].score > bestScore) {
-        bestScore = moves[i].score;
-        bestMove = i;
-      }
-    }
-  } else {
-    var bestScore = 10000;
-    for (var i = 0; i < moves.length; i++) {
-      if (moves[i].score < bestScore) {
-        bestScore = moves[i].score;
-        bestMove = i;
-      }
-    }
-  }
-
-  return moves[bestMove];
-}
-
+// Create a sequential neural network model for Tic-Tac-Toe prediction
 const model = tf.sequential({
   layers: [
     tf.layers.dense({ inputShape: [9], units: 128, activation: 'relu' }),
@@ -194,29 +151,48 @@ const model = tf.sequential({
   ],
 });
 
+/**
+ * Train the neural network using provided training data.
+ * @async
+ */
 async function trainNeuralNetwork() {
+  // Prepare input and output tensors for training
   const xs = tf.tensor2d(trainingData.input, [trainingData.input.length, 9]);
   const ys = tf.oneHot(tf.tensor1d(trainingData.output).toInt(), 9);
 
+  // Compile the model with optimizer, loss function, and metrics
   await model.compile({
     optimizer: 'adam',
     loss: 'categoricalCrossentropy',
     metrics: ['accuracy'],
   });
 
+  // Train the model with input and output tensors for a specified number of epochs
   await model.fit(xs, ys, { epochs: 10 });
 
+  // Dispose of input and output tensors to free up memory
   xs.dispose();
   ys.dispose();
 }
 
+/**
+ * Make a prediction using the trained neural network for the current game state.
+ * @returns {number} - The predicted move index.
+ */
 function neuralNetworkPrediction() {
+  // Convert the current game board to a tensor
   const inputTensor = tf.tensor2d([origBoard], [1, 9]);
+
+  // Make a prediction using the neural network
   const prediction = model.predict(inputTensor);
+
+  // Get the index of the predicted move with the highest probability
   const predictedMove = tf.argMax(prediction, 1).dataSync()[0];
 
+  // Dispose of input tensor and prediction tensor to free up memory
   inputTensor.dispose();
   prediction.dispose();
 
+  // Return the predicted move index
   return predictedMove;
 }
