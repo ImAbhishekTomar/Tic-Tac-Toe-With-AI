@@ -130,19 +130,9 @@ function checkTie() {
 }
 
 /**
- * @fileoverview
- * Tic-Tac-Toe Neural Network Model and Prediction Functions
- *
- * @description
- * This script defines a simple neural network model using TensorFlow.js for making predictions
- * in a Tic-Tac-Toe game. It includes functions for training the neural network and making predictions
- * based on the current game state.
- *
- * @author Your Name
- * @version 1.0
+ * Neural Network Model Configuration
+ * @type {tf.Sequential}
  */
-
-// Create a sequential neural network model for Tic-Tac-Toe prediction
 const model = tf.sequential({
   layers: [
     tf.layers.dense({ inputShape: [9], units: 128, activation: 'relu' }),
@@ -152,48 +142,47 @@ const model = tf.sequential({
 });
 
 /**
- * Train the neural network using provided training data.
+ * Train the Neural Network using provided training data.
  * @async
  */
 async function trainNeuralNetwork() {
-  // Prepare input and output tensors for training
+  // Convert input and output data to TensorFlow tensors
   const xs = tf.tensor2d(trainingData.input, [trainingData.input.length, 9]);
   const ys = tf.oneHot(tf.tensor1d(trainingData.output).toInt(), 9);
 
-  // Compile the model with optimizer, loss function, and metrics
+  // Compile the model
   await model.compile({
     optimizer: 'adam',
     loss: 'categoricalCrossentropy',
     metrics: ['accuracy'],
   });
 
-  // Train the model with input and output tensors for a specified number of epochs
+  // Fit the model to the training data
   await model.fit(xs, ys, { epochs: 10 });
 
-  // Dispose of input and output tensors to free up memory
+  // Dispose of the tensors to free up memory
   xs.dispose();
   ys.dispose();
 }
 
 /**
- * Make a prediction using the trained neural network for the current game state.
- * @returns {number} - The predicted move index.
+ * Predict the next move using the trained neural network.
+ * @returns {number} - Index of the predicted move.
  */
 function neuralNetworkPrediction() {
-  // Convert the current game board to a tensor
+  // Convert the current game board to a TensorFlow tensor
   const inputTensor = tf.tensor2d([origBoard], [1, 9]);
 
-  // Make a prediction using the neural network
+  // Make a prediction using the trained model
   const prediction = model.predict(inputTensor);
 
-  // Get the index of the predicted move with the highest probability
+  // Get the index of the move with the highest probability
   const predictedMove = tf.argMax(prediction, 1).dataSync()[0];
 
-  // Dispose of input tensor and prediction tensor to free up memory
+  // Dispose of the input tensor and prediction tensor to free up memory
   inputTensor.dispose();
   prediction.dispose();
 
-  // Return the predicted move index
   return predictedMove;
 }
 
@@ -243,3 +232,34 @@ for (let i = 0; i < numWorkers; i++) {
     trainingData: trainingData.slice(i * (trainingData.length / numWorkers), (i + 1) * (trainingData.length / numWorkers)),
   });
 }
+
+/**
+ * Save game data to a file using the File System Access API.
+ * @async
+ * @param {Object} gameData - The game data to be saved.
+ */
+async function saveGameDataToFile(gameData) {
+  try {
+    // Prompt the user to select a location to save the file
+    const fileHandle = await window.showSaveFilePicker();
+
+    // Create a writable stream to the selected file
+    const writableStream = await fileHandle.createWritable();
+
+    // Write the JSON-stringified game data to the file
+    await writableStream.write(JSON.stringify(gameData));
+
+    // Close the writable stream
+    await writableStream.close();
+
+    console.log('Game data saved successfully.');
+  } catch (error) {
+    console.error('Error saving game data:', error);
+  }
+}
+
+// Example usage
+const gameData = {
+  /* Your game data here */
+};
+//saveGameDataToFile(gameData);
