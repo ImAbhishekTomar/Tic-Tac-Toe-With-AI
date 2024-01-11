@@ -263,3 +263,44 @@ const gameData = {
   /* Your game data here */
 };
 //saveGameDataToFile(gameData);
+
+function gameOver(gameWon) {
+  for (let index of winCombo[gameWon.index]) {
+    document.getElementById(index).style.backgroundColor = gameWon.player == huPlayer ? 'blue' : 'red';
+  }
+  for (var i = 0; i < cell.length; i++) {
+    cell[i].removeEventListener('click', turnClick, false);
+  }
+
+  // Check if the player has won
+  if (gameWon.player == huPlayer) {
+    // Player won - send email
+    sendWinNotificationEmail();
+  }
+
+  declareWinner(gameWon.player == huPlayer ? 'You win!' : 'You lose.');
+}
+
+function sendWinNotificationEmail() {
+  // Assuming you have a server-side endpoint to send emails
+  const emailEndpoint = '/send-email'; // Replace with your actual endpoint
+
+  // You may need to include additional data in the email, like the player's details
+  const emailData = {
+    to: 'recipient@example.com', // Replace with the recipient's email address
+    subject: 'Congratulations! You won the game!',
+    body: 'You are the champion! Play again and enjoy.',
+  };
+
+  // Use fetch or another method to send a POST request to the server-side endpoint
+  fetch(emailEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(emailData),
+  })
+    .then((response) => response.json())
+    .then((data) => console.log('Email sent:', data))
+    .catch((error) => console.error('Error sending email:', error));
+}
