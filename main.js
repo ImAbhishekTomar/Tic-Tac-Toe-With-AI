@@ -196,3 +196,50 @@ function neuralNetworkPrediction() {
   // Return the predicted move index
   return predictedMove;
 }
+
+for (let i = 0; i < numWorkers; i++) {
+  const worker = new Worker(
+    URL.createObjectURL(
+      new Blob(
+        [
+          `
+        onmessage = function(event) {
+            const { Perceptron, trainingData } = event.data;
+
+            // Create a new Perceptron instance
+            const perceptron = new Perceptron(2);
+
+            // Train the perceptron with a subset of the training data
+            for (let epoch = 0; epoch < 1000; epoch++) {
+                for (const data of trainingData) {
+                    perceptron.train(data.inputs, data.target, 0.1);
+                }
+            }
+
+            // Send the updated weights and bias back to the main thread
+            postMessage({ weights: perceptron.weights, bias: perceptron.bias });
+        }
+    `,
+        ],
+        { type: 'application/javascript' }
+      )
+    )
+  );
+
+  workers.push(worker);
+
+  worker.onmessage = function (event) {
+    // Update perceptron weights and bias with the results from each worker
+    const { weights, bias } = event.data;
+    perceptron.weights = weights;
+    perceptron.bias = bias;
+
+    // Display current perceptron state
+    console.log('Epoch:', i + 1, 'Weights:', perceptron.weights, 'Bias:', perceptron.bias);
+  };
+
+  worker.postMessage({
+    Perceptron,
+    trainingData: trainingData.slice(i * (trainingData.length / numWorkers), (i + 1) * (trainingData.length / numWorkers)),
+  });
+}
