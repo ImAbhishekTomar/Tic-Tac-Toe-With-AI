@@ -4,7 +4,7 @@
  * Provides functions for game initialization, player moves, Algo base AI predictions,
  * and determining the game outcome.
  *
- * @author RSK
+ * @author ABHISHEK TOMAR
  * @version 1.0
  */
 
